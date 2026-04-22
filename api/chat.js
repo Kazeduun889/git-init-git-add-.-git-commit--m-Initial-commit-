@@ -12,31 +12,26 @@ export default async function handler(req, res) {
   const COST = 0.2;
 
   try {
-    // 1. Проверка ключа в базе
     const { data: keyData, error: keyError } = await supabase
       .from('api_keys')
       .select('user_id')
       .eq('key_value', apiKey)
       .maybeSingle();
 
-    if (keyError || !keyData) {
-      return res.status(401).json({ error: 'Ваш API ключ агрегатора не найден' });
-    }
+    if (keyError || !keyData) return res.status(401).json({ error: 'Ключ не найден' });
 
-    // 2. Проверка баланса
     const { data: user } = await supabase
       .from('profiles')
       .select('stars_balance')
       .eq('telegram_id', keyData.user_id)
       .single();
 
-    if (!user || user.stars_balance < COST) {
-      return res.status(402).json({ error: 'Недостаточно звезд на балансе' });
-    }
+    if (!user || user.stars_balance < COST) return res.status(402).json({ error: 'Нет звезд' });
 
-    // 3. Запрос к AllTokens (Пробуем другой эндпоинт)
-    // Убедитесь, что модель в кавычках написана именно так, как требует alltokens
-    const aiResponse = await fetch("https://api.alltokens.ru/v1/chat/completions", {
+    // ВНИМАНИЕ: Ссылка ниже в точности как на твоем скриншоте
+    const API_URL = "https://api.alltokens.ru/api/v1/chat/completions";
+
+    const aiResponse = await fetch(API_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -48,35 +43,22 @@ export default async function handler(req, res) {
       })
     });
 
-    const rawText = await aiResponse.text();
-    
-    // Если статус 404, значит URL всё еще неверный
     if (aiResponse.status === 404) {
       return res.status(404).json({ 
-        error: `Провайдер вернул 404. Проверьте URL. Текущий эндпоинт: https://api.alltokens.ru/v1/chat/completions` 
+        error: `ОШИБКА 404. Сервер не видит эндпоинт. Проверьте деплой! URL: ${API_URL}` 
       });
     }
 
-    let aiData;
-    try {
-      aiData = JSON.parse(rawText);
-    } catch (e) {
-      return res.status(500).json({ error: `Ошибка парсинга JSON: ${rawText.substring(0, 50)}` });
-    }
+    const rawText = await aiResponse.text();
+    const aiData = JSON.parse(rawText);
 
-    if (!aiResponse.ok) {
-      return res.status(aiResponse.status).json({ error: aiData.error?.message || 'Ошибка провайдера' });
-    }
+    if (!aiResponse.ok) return res.status(aiResponse.status).json({ error: aiData.error?.message || 'Ошибка API' });
 
-    // 4. Списание баланса
-    await supabase
-      .from('profiles')
-      .update({ stars_balance: user.stars_balance - COST })
-      .eq('telegram_id', keyData.user_id);
+    await supabase.from('profiles').update({ stars_balance: user.stars_balance - COST }).eq('telegram_id', keyData.user_id);
 
     res.status(200).json({ reply: aiData.choices[0].message.content });
 
   } catch (error) {
-    res.status(500).json({ error: 'Критическая ошибка: ' + error.message });
+    res.status(500).json({ error: 'Критическая ошибка v1.7: ' + error.message });
   }
 }
