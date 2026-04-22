@@ -13,10 +13,10 @@ const AI_MODELS = [
 // --- Views ---
 
 const ProfileView = ({ userData }) => (
-  <div className="p-6 space-y-6 animate-in fade-in duration-500 pb-24">
+  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-6 space-y-6 pb-24">
     <div className="glass-card p-6 border-accent/20 bg-accent/5">
       <div className="flex items-center gap-4 mb-6">
-        <div className="w-16 h-16 bg-gradient-to-tr from-accent to-purple-400 rounded-2xl flex items-center justify-center shadow-xl">
+        <div className="w-16 h-16 bg-gradient-to-tr from-accent to-purple-400 rounded-2xl flex items-center justify-center shadow-xl shadow-accent/20">
           <User size={32} className="text-white" />
         </div>
         <div>
@@ -27,36 +27,36 @@ const ProfileView = ({ userData }) => (
           </div>
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-3">
-        <div className="bg-white/5 p-3 rounded-xl border border-white/5 text-center">
-          <p className="text-[10px] text-gray-400 uppercase font-bold">Requests</p>
+      <div className="grid grid-cols-2 gap-3 text-center">
+        <div className="bg-white/5 p-3 rounded-xl border border-white/5">
+          <p className="text-[10px] text-gray-500 uppercase font-bold tracking-widest">Requests</p>
           <p className="text-lg font-mono">0</p>
         </div>
-        <div className="bg-white/5 p-3 rounded-xl border border-white/5 text-center">
-          <p className="text-[10px] text-gray-400 uppercase font-bold">Status</p>
+        <div className="bg-white/5 p-3 rounded-xl border border-white/5">
+          <p className="text-[10px] text-gray-500 uppercase font-bold tracking-widest">Status</p>
           <p className="text-lg font-mono text-green-400">Active</p>
         </div>
       </div>
     </div>
     
     <div className="space-y-4">
-      <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest px-1">Top Up</h3>
+      <h3 className="text-[11px] font-black text-gray-500 uppercase tracking-[0.2em] px-1">Top Up Balance</h3>
       {[50, 250, 1000].map(amt => (
         <button key={amt} className="w-full glass-card p-4 flex justify-between items-center hover:bg-white/10 active:scale-[0.98] transition-all border-white/5">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-yellow-500/10 rounded-lg flex items-center justify-center text-yellow-500">⭐</div>
+            <div className="w-8 h-8 bg-yellow-500/10 rounded-lg flex items-center justify-center text-yellow-500 font-bold text-xs">⭐</div>
             <span className="font-bold">{amt} Stars</span>
           </div>
           <Plus size={18} className="text-accent" />
         </button>
       ))}
     </div>
-  </div>
+  </motion.div>
 );
 
 const ModelsView = () => (
-  <div className="p-6 space-y-4 pb-24 animate-in slide-in-from-bottom-4">
-    <h2 className="text-2xl font-bold mb-2 italic">AI Catalog</h2>
+  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="p-6 space-y-4 pb-24">
+    <h2 className="text-2xl font-black italic tracking-tighter mb-2">AI MODELS</h2>
     {AI_MODELS.map((model) => (
       <div key={model.id} className="glass-card p-4 flex items-center justify-between group active:scale-[0.98] transition-all border-white/5 hover:border-accent/30">
         <div className="flex items-center gap-4">
@@ -66,8 +66,8 @@ const ModelsView = () => (
           <div>
             <h3 className="font-bold text-white tracking-wide">{model.name}</h3>
             <div className="flex gap-2 mt-1 items-center">
-              <span className="text-[9px] bg-accent text-white px-1.5 py-0.5 rounded uppercase font-black tracking-tighter">{model.provider}</span>
-              <span className="text-[10px] text-gray-400 font-medium">{model.price} / req</span>
+              <span className="text-[9px] bg-accent text-white px-1.5 py-0.5 rounded uppercase font-black">{model.provider}</span>
+              <span className="text-[10px] text-gray-400 font-medium">{model.price}</span>
             </div>
           </div>
         </div>
@@ -76,7 +76,7 @@ const ModelsView = () => (
         </div>
       </div>
     ))}
-  </div>
+  </motion.div>
 );
 
 const ApiView = ({ tgId }) => {
@@ -87,30 +87,34 @@ const ApiView = ({ tgId }) => {
   }, [tgId]);
 
   const fetchKeys = async () => {
-    const { data } = await supabase.from('api_keys').select('*').eq('user_id', tgId).order('created_at', { ascending: false });
+    const { data, error } = await supabase.from('api_keys').select('*').eq('user_id', tgId).order('created_at', { ascending: false });
     if (data) setKeys(data);
+    if (error) alert("Fetch Error: " + error.message);
   };
 
   const createKey = async () => {
-    if (!tgId) return;
+    if (!tgId) return alert("Wait for user data...");
     const newKeyValue = `nx_sk_${Math.random().toString(36).substring(2, 15)}`;
     const { data, error } = await supabase.from('api_keys').insert([
       { user_id: tgId, key_name: `Key ${keys.length + 1}`, key_value: newKeyValue }
     ]).select();
     
-    if (data) setKeys([...data, ...keys]);
-    if (error) console.error(error);
+    if (data) {
+        setKeys([...data, ...keys]);
+        window.Telegram?.WebApp?.HapticFeedback.notificationOccurred('success');
+    }
+    if (error) alert("Insert Error: " + error.message);
   };
 
   const deleteKey = async (id) => {
-    await supabase.from('api_keys').delete().eq('id', id);
-    setKeys(keys.filter(k => k.id !== id));
+    const { error } = await supabase.from('api_keys').delete().eq('id', id);
+    if (!error) setKeys(keys.filter(k => k.id !== id));
   };
 
   return (
-    <div className="p-6 space-y-6 pb-24 animate-in slide-in-from-bottom-4">
+    <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="p-6 space-y-6 pb-24">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold italic">API Access</h2>
+        <h2 className="text-2xl font-black italic tracking-tighter">API KEYS</h2>
         <ShieldCheck className="text-green-400" size={24} />
       </div>
       
@@ -120,26 +124,25 @@ const ApiView = ({ tgId }) => {
       </button>
 
       <div className="space-y-4">
-        <p className="text-[10px] text-gray-500 uppercase font-black tracking-[0.2em] px-1">Your Keys</p>
         {keys.map(k => (
-          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} key={k.id} className="glass-card p-4 space-y-3 relative border-white/5">
+          <div key={k.id} className="glass-card p-4 space-y-3 border-white/5">
             <div className="flex justify-between items-start">
               <h4 className="font-bold text-sm text-gray-200">{k.key_name}</h4>
-              <button onClick={() => deleteKey(k.id)} className="text-gray-600 hover:text-red-400 transition-colors p-1">
+              <button onClick={() => deleteKey(k.id)} className="text-gray-600 hover:text-red-400 p-1">
                 <Trash2 size={14} />
               </button>
             </div>
-            <div className="flex items-center justify-between bg-black/40 rounded-xl px-3 py-2.5 border border-white/5 font-mono text-[10px] text-accent">
-              <span className="truncate mr-2">{k.key_value}</span>
-              <Copy size={14} className="text-gray-500 hover:text-white cursor-pointer flex-shrink-0" onClick={() => {
+            <div className="flex items-center justify-between bg-black/40 rounded-xl px-3 py-2.5 border border-white/5 font-mono text-[10px] text-accent overflow-hidden">
+              <span className="truncate mr-2 uppercase tracking-tighter">{k.key_value}</span>
+              <Copy size={14} className="text-gray-500 hover:text-white flex-shrink-0 cursor-pointer" onClick={() => {
                 navigator.clipboard.writeText(k.key_value);
-                window.Telegram?.WebApp?.HapticFeedback.notificationOccurred('success');
+                alert("Copied!");
               }} />
             </div>
-          </motion.div>
+          </div>
         ))}
       </div>
-    </div>
+    </motion.div>
   );
 };
 
@@ -163,20 +166,31 @@ export default function App() {
   }, []);
 
   const syncUser = async (tgUser) => {
-    let { data } = await supabase.from('profiles').select('*').eq('telegram_id', tgUser.id).maybeSingle();
-    
-    if (!data) {
-      const { data: newUser } = await supabase.from('profiles').insert([
-        { telegram_id: tgUser.id, username: tgUser.username || 'user', stars_balance: 500 }
-      ]).select().single();
-      setUserData(newUser);
-    } else {
-      setUserData(data);
+    try {
+      let { data, error } = await supabase.from('profiles').select('*').eq('telegram_id', tgUser.id).maybeSingle();
+      
+      if (error) {
+        alert("Supabase Error: " + error.message);
+        return;
+      }
+
+      if (!data) {
+        const { data: newUser, error: insertError } = await supabase.from('profiles').insert([
+          { telegram_id: tgUser.id, username: tgUser.username || 'user', stars_balance: 500 }
+        ]).select().single();
+        
+        if (newUser) setUserData(newUser);
+        if (insertError) alert("Registration Error: " + insertError.message);
+      } else {
+        setUserData(data);
+      }
+    } catch (err) {
+      alert("App Crash: " + err.message);
     }
   };
 
   return (
-    <div className="flex flex-col h-screen max-w-md mx-auto relative bg-main-gradient overflow-hidden">
+    <div className="flex flex-col h-screen max-w-md mx-auto relative bg-[#0f172a] text-white overflow-hidden">
       <main className="flex-1 overflow-y-auto">
         <AnimatePresence mode="wait">
           {activeTab === 'home' && <ProfileView key="p" userData={userData} />}
@@ -197,10 +211,10 @@ export default function App() {
                 setActiveTab(tab.id);
                 window.Telegram?.WebApp?.HapticFeedback.impactOccurred('light');
             }}
-            className={`flex-1 flex flex-col items-center py-2.5 rounded-2xl transition-all duration-300 ${activeTab === tab.id ? 'bg-accent text-white shadow-lg shadow-accent/40' : 'text-gray-500 hover:text-gray-300'}`}
+            className={`flex-1 flex flex-col items-center py-2.5 rounded-2xl transition-all duration-300 ${activeTab === tab.id ? 'bg-accent text-white shadow-lg shadow-accent/40' : 'text-gray-500'}`}
           >
-            <tab.icon size={20} strokeWidth={activeTab === tab.id ? 2.5 : 2} />
-            <span className="text-[10px] mt-1 font-bold uppercase tracking-tighter">{tab.label}</span>
+            <tab.icon size={20} />
+            <span className="text-[10px] mt-1 font-black uppercase tracking-tighter">{tab.label}</span>
           </button>
         ))}
       </nav>
