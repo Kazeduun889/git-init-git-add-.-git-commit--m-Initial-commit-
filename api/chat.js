@@ -1,78 +1,72 @@
 import { createClient } from '@supabase/supabase-js'
 
-// Инициализация Supabase с серверными ключами
 const supabase = createClient(
-  process.env.SUPABASE_URL, 
+  process.env.VITE_SUPABASE_URL, 
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-
 export default async function handler(req, res) {
-  // Разрешаем только POST запросы
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Метод не разрешен' });
-  }
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Use POST' });
 
   const { apiKey, prompt } = req.body;
-  const COST = 0.2; // Стоимость одного запроса
+  const COST = 0.2;
 
   try {
-    // 1. Проверяем API ключ пользователя в нашей базе
+    // 1. Проверка ключа в базе
     const { data: keyData, error: keyError } = await supabase
       .from('api_keys')
       .select('user_id')
       .eq('key_value', apiKey)
-      .single();
+      .maybeSingle();
 
     if (keyError || !keyData) {
-      return res.status(401).json({ error: 'Неверный API ключ агрегатора' });
+      return res.status(401).json({ error: 'Ваш API ключ не найден в базе' });
     }
 
-    // 2. Проверяем баланс пользователя
-    const { data: userData, error: userError } = await supabase
+    // 2. Проверка баланса
+    const { data: user, error: userError } = await supabase
       .from('profiles')
       .select('stars_balance')
       .eq('telegram_id', keyData.user_id)
       .single();
 
-    if (userError || !userData || userData.stars_balance < COST) {
-      return res.status(402).json({ error: 'Недостаточно звезд на балансе' });
+    if (userError || !user || user.stars_balance < COST) {
+      return res.status(402).json({ error: 'Недостаточно звезд (нужно 0.2)' });
     }
 
-    // 3. Запрос к API AllTokens
+    // 3. Запрос к AllTokens
     const aiResponse = await fetch("https://api.alltokens.ru/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${process.env.AI_PROVIDER_KEY}` // Ваш ключ от alltokens.ru в Vercel
+        "Authorization": `Bearer ${process.env.AI_PROVIDER_KEY}`
       },
       body: JSON.stringify({
         model: "nvidia/nemotron-3-nano-30b-a3b:free",
-        messages: [{ role: "user", content: prompt }],
-        temperature: 0.7
+        messages: [{ role: "user", content: prompt }]
       })
     });
 
     const aiData = await aiResponse.json();
 
-    if (aiData.error) {
-      return res.status(500).json({ error: 'Ошибка провайдера: ' + aiData.error.message });
+    // Проверка ответа от провайдера
+    if (!aiResponse.ok) {
+      return res.status(500).json({ error: 'Ошибка AllTokens: ' + (aiData.error?.message || 'Неизвестно') });
     }
 
-    // 4. Если ответ получен успешно, списываем 0.2 звезды
-    const newBalance = userData.stars_balance - COST;
-    await supabase
+    // 4. Списание
+    const { error: updateError } = await supabase
       .from('profiles')
-      .update({ stars_balance: newBalance })
+      .update({ stars_balance: user.stars_balance - COST })
       .eq('telegram_id', keyData.user_id);
 
-    // 5. Возвращаем ответ пользователю
-    res.status(200).json({ 
-      reply: aiData.choices[0].message.content 
-    });
+    if (updateError) {
+      return res.status(500).json({ error: 'Ошибка списания баланса. Проверьте тип колонки в SQL!' });
+    }
+
+    res.status(200).json({ reply: aiData.choices[0].message.content });
 
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Внутренняя ошибка сервера' });
+    res.status(500).json({ error: 'Критическая ошибка: ' + error.message });
   }
 }
