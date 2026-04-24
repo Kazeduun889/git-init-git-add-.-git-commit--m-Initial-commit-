@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { User, Key, Sparkles, Copy, Plus, Trash2, ShieldCheck, Send, Loader2, Menu, X, MessageSquare, Code, BookOpen, Terminal } from 'lucide-react';
+import { User, Key, Sparkles, Copy, Plus, Trash2, ShieldCheck, Send, Loader2, Menu, X, MessageSquare, BookOpen, Terminal, Cpu } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -44,7 +44,7 @@ const ProfileView = ({ userData }) => {
   };
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-6 space-y-6 pb-24 font-sans">
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-6 space-y-6 pb-32 font-sans">
       <div className="glass-card p-6 border-accent/20 bg-accent/5 relative">
         <div className="flex items-center gap-4">
           <div className="w-16 h-16 bg-gradient-to-tr from-accent to-purple-500 rounded-2xl flex items-center justify-center shadow-lg">
@@ -71,7 +71,7 @@ const ProfileView = ({ userData }) => {
             >
               <Sparkles size={20} className="text-yellow-500" fill="currentColor" />
               <span className="font-bold text-white text-sm">{pack.amt} Звезд</span>
-              <span className="text-[9px] text-accent font-black uppercase">Купить</span>
+              <span className="text-[9px] text-accent font-black uppercase tracking-widest">Купить</span>
             </button>
           ))}
         </div>
@@ -151,12 +151,22 @@ const ChatView = ({ userData, onUpdateBalance }) => {
 
   return (
     <div className="flex flex-col h-full relative font-sans">
-      <header className="p-4 flex justify-between items-center border-b border-white/5 bg-[#0a0a0a]">
-        <h2 className="text-xl font-black uppercase tracking-tighter">Чат-сессия</h2>
-        <button onClick={() => setIsHistoryOpen(true)} className="p-2 glass-card text-accent"><Menu size={20} /></button>
+      <header className="p-4 border-b border-white/5 bg-[#0a0a0a] sticky top-0 z-40">
+        <div className="flex justify-between items-center mb-3">
+          <h2 className="text-xl font-black uppercase tracking-tighter">Чат-сессия</h2>
+          <button onClick={() => setIsHistoryOpen(true)} className="p-2 glass-card text-accent"><Menu size={20} /></button>
+        </div>
+        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
+          {AI_MODELS.map(m => (
+            <div key={m.id} className="flex items-center gap-2 bg-accent/10 border border-accent/30 px-3 py-1.5 rounded-lg">
+              <Cpu size={12} className="text-accent" />
+              <span className="text-[10px] font-bold text-white uppercase tracking-tight">{m.name}</span>
+            </div>
+          ))}
+        </div>
       </header>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-32">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-48">
         {!currentChat ? (
           <div className="h-full flex flex-col items-center justify-center text-center space-y-4 opacity-50">
             <MessageSquare size={48} /><p className="text-sm">Выберите или создайте новый диалог</p>
@@ -165,12 +175,12 @@ const ChatView = ({ userData, onUpdateBalance }) => {
         ) : (
           messages.map((m, i) => (
             <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-              <div className={`max-w-[90%] p-4 rounded-2xl text-sm leading-relaxed ${m.role === 'user' ? 'bg-accent text-white rounded-tr-none' : 'glass-card border-white/10 rounded-tl-none text-gray-100'}`}>
+              <div className={`max-w-[90%] p-4 rounded-2xl text-sm leading-relaxed ${m.role === 'user' ? 'bg-accent text-white rounded-tr-none' : 'glass-card border-white/10 rounded-tl-none text-gray-100 shadow-xl'}`}>
                 <ReactMarkdown remarkPlugins={[remarkGfm]} components={{
                   code({node, inline, className, children, ...props}) {
                     return !inline ? (
                       <div className="relative my-2">
-                        <pre className="bg-black/50 p-3 rounded-lg overflow-x-auto text-[12px] font-mono border border-white/5">
+                        <pre className="bg-black/50 p-3 rounded-lg overflow-x-auto text-[11px] font-mono border border-white/5">
                           {children}
                         </pre>
                         <button onClick={() => navigator.clipboard.writeText(children)} className="absolute top-2 right-2 p-1 bg-white/5 rounded hover:bg-white/10 transition-colors">
@@ -188,15 +198,15 @@ const ChatView = ({ userData, onUpdateBalance }) => {
             </div>
           ))
         )}
-        {loading && <div className="text-[10px] text-accent animate-pulse font-bold uppercase tracking-widest">Печатает...</div>}
+        {loading && <div className="text-[10px] text-accent animate-pulse font-bold uppercase tracking-widest ml-1">ИИ анализирует...</div>}
         <div ref={scrollRef} />
       </div>
 
       {currentChat && (
-        <div className="fixed bottom-24 left-0 w-full p-4 bg-[#0a0a0a]/90 backdrop-blur-md">
+        <div className="fixed bottom-24 left-0 w-full p-4 bg-[#0a0a0a]/95 backdrop-blur-xl border-t border-white/5 z-40">
           <div className="relative max-w-md mx-auto flex gap-2">
-            <input value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && sendMessage()} placeholder="Напишите сообщение..." className="flex-1 bg-white/5 border border-white/10 rounded-2xl py-4 px-5 focus:outline-none focus:border-accent/50 text-sm" />
-            <button onClick={sendMessage} className="p-4 bg-accent rounded-2xl text-white active:scale-90 transition-all"><Send size={18} /></button>
+            <input value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && sendMessage()} placeholder="Напишите сообщение..." className="flex-1 bg-white/5 border border-white/10 rounded-2xl py-4 px-5 focus:outline-none focus:border-accent/50 text-sm shadow-inner" />
+            <button onClick={sendMessage} className="p-4 bg-accent rounded-2xl text-white active:scale-90 transition-all shadow-lg shadow-accent/20"><Send size={18} /></button>
           </div>
         </div>
       )}
@@ -206,8 +216,8 @@ const ChatView = ({ userData, onUpdateBalance }) => {
           <>
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsHistoryOpen(false)} className="fixed inset-0 bg-black/80 z-[60]" />
             <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} className="fixed top-0 right-0 h-full w-4/5 bg-[#0a0a0a] z-[70] p-6 shadow-2xl border-l border-white/5">
-              <div className="flex justify-between items-center mb-8"><h3 className="font-black uppercase tracking-widest text-xs">История</h3><X onClick={() => setIsHistoryOpen(false)} /></div>
-              <button onClick={startNewChat} className="w-full py-4 glass-card border-dashed border-accent/40 text-accent font-black text-[10px] uppercase mb-6 flex items-center justify-center gap-2 tracking-widest"><Plus size={16} /> Новый чат</button>
+              <div className="flex justify-between items-center mb-8"><h3 className="font-black uppercase tracking-widest text-xs">Архив диалогов</h3><X onClick={() => setIsHistoryOpen(false)} /></div>
+              <button onClick={startNewChat} className="w-full py-4 glass-card border-dashed border-accent/40 text-accent font-black text-[10px] uppercase mb-6 flex items-center justify-center gap-2 tracking-widest"><Plus size={16} /> Создать диалог</button>
               <div className="space-y-3 overflow-y-auto max-h-[75vh] no-scrollbar">
                 {chats.map(c => (
                   <div key={c.id} className={`flex items-center gap-2 p-3 rounded-xl ${currentChat?.id === c.id ? 'bg-accent/20 border border-accent/50 text-white' : 'bg-white/5 border border-transparent text-gray-400'}`}>
@@ -240,27 +250,26 @@ const ApiView = ({ tgId }) => {
   };
 
   return (
-    <div className="p-6 space-y-6 pb-24 font-sans overflow-y-auto h-full no-scrollbar">
-      <div className="flex justify-between items-center"><h2 className="text-2xl font-black tracking-tighter uppercase">API Доступ</h2><ShieldCheck className="text-green-500" /></div>
+    <div className="p-6 space-y-6 pb-40 font-sans overflow-y-auto h-full no-scrollbar">
+      <div className="flex justify-between items-center"><h2 className="text-2xl font-black tracking-tighter uppercase">Разработчикам</h2><ShieldCheck className="text-green-500" /></div>
       
-      {/* Секция документации */}
       <div className="glass-card p-5 border-white/5 space-y-4">
-        <div className="flex items-center gap-2 text-accent font-bold text-xs uppercase tracking-widest border-b border-white/5 pb-3">
-          <BookOpen size={14} /> Инструкция по интеграции
+        <div className="flex items-center gap-2 text-accent font-black text-[10px] uppercase tracking-[0.2em] border-b border-white/5 pb-3">
+          <BookOpen size={14} /> Интеграция по шагам
         </div>
-        <div className="space-y-3 text-[11px] text-gray-400 leading-relaxed">
-          <p>Наш агрегатор позволяет использовать мощные ИИ модели в ваших проектах через простой HTTP запрос.</p>
+        <div className="space-y-4 text-[11px] text-gray-400 leading-relaxed">
           <div className="space-y-1">
-            <span className="text-gray-200 font-bold block uppercase text-[9px]">1. Base URL</span>
-            <code className="block bg-black/40 p-2 rounded border border-white/5 text-accent truncate">https://{window.location.hostname}/api/chat</code>
+            <span className="text-gray-100 font-bold block uppercase text-[9px] tracking-widest">Шаг 1: Адрес запроса</span>
+            <p>Используйте этот URL для всех ваших POST-запросов к системе:</p>
+            <code className="block bg-black/40 p-2 rounded border border-white/5 text-accent text-[9px] whitespace-nowrap overflow-x-auto">https://{window.location.hostname}/api/chat</code>
           </div>
           <div className="space-y-1">
-            <span className="text-gray-200 font-bold block uppercase text-[9px]">2. Авторизация</span>
-            <p>Передавайте ваш секретный ключ в теле запроса как <code className="text-white">apiKey</code>.</p>
+            <span className="text-gray-100 font-bold block uppercase text-[9px] tracking-widest">Шаг 2: Ваш API Ключ</span>
+            <p>Сгенерируйте ключ ниже и передавайте его в JSON теле запроса как <span className="text-white">"apiKey"</span>. Это ваш идентификатор.</p>
           </div>
           <div className="space-y-1 pt-2">
-            <span className="text-gray-200 font-bold block uppercase text-[9px]">3. Пример (cURL)</span>
-            <pre className="bg-black p-3 rounded-lg text-[10px] text-green-500 overflow-x-auto border border-white/5">
+            <span className="text-gray-100 font-bold block uppercase text-[9px] tracking-widest flex items-center gap-1"><Terminal size={10} /> Пример запроса</span>
+            <pre className="bg-black p-3 rounded-lg text-[10px] text-green-500 overflow-x-auto border border-white/5 leading-tight font-mono">
 {`curl -X POST "${window.location.origin}/api/chat" \\
 -H "Content-Type: application/json" \\
 -d '{
@@ -273,17 +282,18 @@ const ApiView = ({ tgId }) => {
         </div>
       </div>
 
-      <button onClick={createKey} className="w-full glass-card border-dashed border-accent/40 p-5 flex items-center justify-center gap-3 text-accent font-black text-[10px] uppercase tracking-widest active:scale-95 transition-all">
-        <Plus size={18} /> Создать секретный ключ
+      <button onClick={createKey} className="w-full glass-card border-dashed border-accent/40 p-5 flex items-center justify-center gap-3 text-accent font-black text-[10px] uppercase tracking-widest active:scale-95 transition-all shadow-lg shadow-accent/5">
+        <Plus size={18} /> Создать новый ключ
       </button>
 
       <div className="space-y-3">
+        <h3 className="text-[10px] font-black text-gray-600 uppercase tracking-[0.2em] px-1">Ваши активные ключи</h3>
         {keys.map(k => (
           <div key={k.id} className="glass-card p-4 border-white/5 flex flex-col space-y-2">
             <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{k.key_name}</span>
-            <div className="flex items-center justify-between bg-black/40 rounded-xl px-3 py-2.5 border border-white/5 font-mono text-[10px] text-accent">
+            <div className="flex items-center justify-between bg-black/40 rounded-xl px-3 py-2.5 border border-white/5 font-mono text-[10px] text-accent shadow-inner overflow-hidden">
               <span className="truncate mr-4 uppercase">{k.key_value}</span>
-              <Copy size={14} className="text-gray-500 hover:text-white cursor-pointer" onClick={() => { navigator.clipboard.writeText(k.key_value); alert("Скопировано"); }} />
+              <Copy size={14} className="text-gray-500 hover:text-white cursor-pointer flex-shrink-0" onClick={() => { navigator.clipboard.writeText(k.key_value); alert("Ключ скопирован!"); }} />
             </div>
           </div>
         ))}

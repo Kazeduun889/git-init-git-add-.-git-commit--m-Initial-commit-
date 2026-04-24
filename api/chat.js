@@ -1,3 +1,4 @@
+https://jozhcryabkfdvfyjqmdd.supabase.co
 import { createClient } from '@supabase/supabase-js'
 
 const supabase = createClient(
@@ -6,13 +7,13 @@ const supabase = createClient(
 );
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Используйте POST' });
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Используйте POST запрос' });
 
   const { apiKey, messages, model } = req.body;
-  const COST = 0.2; // Фиксированная цена за запрос
+  const COST = 0.2; // Фиксированная стоимость запроса
 
   try {
-    // 1. Проверка API ключа агрегатора
+    // 1. Валидация ключа агрегатора
     const { data: keyData, error: keyError } = await supabase
       .from('api_keys')
       .select('user_id')
@@ -20,7 +21,7 @@ export default async function handler(req, res) {
       .maybeSingle();
 
     if (keyError || !keyData) {
-      return res.status(401).json({ error: 'API ключ агрегатора не валиден' });
+      return res.status(401).json({ error: 'Ваш API ключ недействителен или не найден' });
     }
 
     // 2. Проверка баланса пользователя
@@ -31,10 +32,10 @@ export default async function handler(req, res) {
       .single();
 
     if (userError || !user || user.stars_balance < COST) {
-      return res.status(402).json({ error: 'Недостаточно звезд на балансе' });
+      return res.status(402).json({ error: 'Недостаточно звезд. Требуется минимум 0.2 ⭐' });
     }
 
-    // 3. Запрос к AllTokens с историей сообщений
+    // 3. Запрос к провайдеру (alltokens.ru)
     const aiResponse = await fetch("https://api.alltokens.ru/api/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -43,8 +44,9 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         model: model || "nvidia/nemotron-3-nano-30b-a3b:free",
-        messages: messages, // Передаем массив истории сообщений
-        temperature: 0.7
+        messages: messages, // Передача истории диалога
+        temperature: 0.7,
+        max_tokens: 2000
       })
     });
 
@@ -52,24 +54,26 @@ export default async function handler(req, res) {
 
     if (!aiResponse.ok) {
       return res.status(aiResponse.status).json({ 
-        error: aiData.error?.message || 'Ошибка нейросети' 
+        error: aiData.error?.message || 'Ошибка на стороне нейросети' 
       });
     }
 
-    // 4. Списание баланса в базе данных
+    // 4. Списание средств с баланса (атомарное обновление)
     const { error: updateError } = await supabase
       .from('profiles')
       .update({ stars_balance: user.stars_balance - COST })
       .eq('telegram_id', keyData.user_id);
 
     if (updateError) {
-      return res.status(500).json({ error: 'Ошибка обновления баланса' });
+      return res.status(500).json({ error: 'Системная ошибка при списании баланса' });
     }
 
-    // 5. Возвращаем ответ
-    res.status(200).json({ reply: aiData.choices[0].message.content });
+    // 5. Успешный возврат ответа
+    res.status(200).json({ 
+      reply: aiData.choices[0].message.content 
+    });
 
   } catch (error) {
-    res.status(500).json({ error: 'Системная ошибка: ' + error.message });
+    res.status(500).json({ error: 'Критическая ошибка сервера: ' + error.message });
   }
 }
