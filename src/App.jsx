@@ -6,7 +6,7 @@ import remarkGfm from 'remark-gfm';
 import { supabase } from './supabaseClient';
 
 const AI_MODELS = [
-  { id: 'nvidia/nemotron-3-nano-30b-a3b:free', name: 'Nemotron 3 Nano 30B', provider: 'NVIDIA', price: '0.2 ⭐', icon: '🤖' },
+  { id: 'nvidia/nemotron-3-nano-30b-a3b:free', name: 'Nemotron 3 Nano 30B', provider: 'NVIDIA', price: '0.2', icon: '🤖' },
 ];
 
 const RECHARGE_PACKS = [
@@ -45,19 +45,15 @@ const ProfileView = ({ userData }) => {
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-6 space-y-6 pb-32 font-sans">
-      <div className="glass-card p-6 border-accent/20 bg-accent/5 relative">
-        <div className="flex items-center gap-4">
-          <div className="w-16 h-16 bg-gradient-to-tr from-accent to-purple-500 rounded-2xl flex items-center justify-center shadow-lg">
-            <User size={32} className="text-white" />
+      <div className="glass-card p-6 border-accent/20 bg-accent/5 relative text-center flex flex-col items-center">
+          <div className="w-20 h-20 bg-gradient-to-tr from-accent to-purple-500 rounded-3xl flex items-center justify-center shadow-xl mb-4">
+            <User size={40} className="text-white" />
           </div>
-          <div>
-            <h2 className="text-xl font-bold text-white tracking-tight">@{userData?.username || 'user'}</h2>
-            <div className="flex items-center gap-1.5 text-yellow-400 mt-1 font-bold">
-              <Sparkles size={16} fill="currentColor" />
-              <span>{userData?.stars_balance?.toFixed(1) ?? 0} Звезд</span>
-            </div>
+          <h2 className="text-xl font-bold text-white tracking-tight">@{userData?.username || 'user'}</h2>
+          <div className="flex items-center gap-1.5 text-yellow-400 mt-2 font-black bg-white/5 px-4 py-1.5 rounded-full border border-white/5">
+            <Sparkles size={16} fill="currentColor" />
+            <span>{userData?.stars_balance?.toFixed(1) ?? 0} Звезд</span>
           </div>
-        </div>
       </div>
 
       <div className="space-y-4">
@@ -152,15 +148,20 @@ const ChatView = ({ userData, onUpdateBalance }) => {
   return (
     <div className="flex flex-col h-full relative font-sans">
       <header className="p-4 border-b border-white/5 bg-[#0a0a0a] sticky top-0 z-40">
-        <div className="flex justify-between items-center mb-3">
+        <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-black uppercase tracking-tighter">Чат-сессия</h2>
-          <button onClick={() => setIsHistoryOpen(true)} className="p-2 glass-card text-accent"><Menu size={20} /></button>
+          <button onClick={() => setIsHistoryOpen(true)} className="p-2 glass-card text-accent active:scale-90 transition-all"><Menu size={20} /></button>
         </div>
         <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
           {AI_MODELS.map(m => (
-            <div key={m.id} className="flex items-center gap-2 bg-accent/10 border border-accent/30 px-3 py-1.5 rounded-lg">
-              <Cpu size={12} className="text-accent" />
+            <div key={m.id} className="flex items-center gap-2.5 bg-accent/10 border border-accent/30 px-3 py-2 rounded-xl shadow-sm">
+              <Cpu size={12} className="text-accent shrink-0" />
               <span className="text-[10px] font-bold text-white uppercase tracking-tight">{m.name}</span>
+              <div className="w-[1px] h-3 bg-white/10 mx-0.5" />
+              <div className="flex items-center gap-1 text-yellow-400">
+                <Sparkles size={10} fill="currentColor" />
+                <span className="text-[10px] font-black tracking-tighter">{m.price}</span>
+              </div>
             </div>
           ))}
         </div>
@@ -175,7 +176,7 @@ const ChatView = ({ userData, onUpdateBalance }) => {
         ) : (
           messages.map((m, i) => (
             <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-              <div className={`max-w-[90%] p-4 rounded-2xl text-sm leading-relaxed ${m.role === 'user' ? 'bg-accent text-white rounded-tr-none' : 'glass-card border-white/10 rounded-tl-none text-gray-100 shadow-xl'}`}>
+              <div className={`max-w-[90%] p-4 rounded-2xl text-sm leading-relaxed ${m.role === 'user' ? 'bg-accent text-white rounded-tr-none shadow-lg shadow-accent/10' : 'glass-card border-white/10 rounded-tl-none text-gray-100 shadow-xl'}`}>
                 <ReactMarkdown remarkPlugins={[remarkGfm]} components={{
                   code({node, inline, className, children, ...props}) {
                     return !inline ? (
@@ -255,25 +256,25 @@ const ApiView = ({ tgId }) => {
       
       <div className="glass-card p-5 border-white/5 space-y-4">
         <div className="flex items-center gap-2 text-accent font-black text-[10px] uppercase tracking-[0.2em] border-b border-white/5 pb-3">
-          <BookOpen size={14} /> Интеграция по шагам
+          <BookOpen size={14} /> Полное руководство
         </div>
         <div className="space-y-4 text-[11px] text-gray-400 leading-relaxed">
           <div className="space-y-1">
-            <span className="text-gray-100 font-bold block uppercase text-[9px] tracking-widest">Шаг 1: Адрес запроса</span>
-            <p>Используйте этот URL для всех ваших POST-запросов к системе:</p>
-            <code className="block bg-black/40 p-2 rounded border border-white/5 text-accent text-[9px] whitespace-nowrap overflow-x-auto">https://{window.location.hostname}/api/chat</code>
+            <span className="text-gray-100 font-bold block uppercase text-[9px] tracking-widest">Шаг 1: Конечная точка (Endpoint)</span>
+            <p>Выполняйте все POST-запросы вашего приложения на этот защищенный адрес:</p>
+            <code className="block bg-black/40 p-2.5 rounded-lg border border-white/5 text-accent text-[9px] whitespace-nowrap overflow-x-auto shadow-inner tracking-tight">https://{window.location.hostname}/api/chat</code>
           </div>
           <div className="space-y-1">
-            <span className="text-gray-100 font-bold block uppercase text-[9px] tracking-widest">Шаг 2: Ваш API Ключ</span>
-            <p>Сгенерируйте ключ ниже и передавайте его в JSON теле запроса как <span className="text-white">"apiKey"</span>. Это ваш идентификатор.</p>
+            <span className="text-gray-100 font-bold block uppercase text-[9px] tracking-widest">Шаг 2: Идентификация</span>
+            <p>Создайте секретный ключ ниже. Его необходимо передавать в теле каждого запроса как обязательное поле <span className="text-white">"apiKey"</span>.</p>
           </div>
           <div className="space-y-1 pt-2">
-            <span className="text-gray-100 font-bold block uppercase text-[9px] tracking-widest flex items-center gap-1"><Terminal size={10} /> Пример запроса</span>
-            <pre className="bg-black p-3 rounded-lg text-[10px] text-green-500 overflow-x-auto border border-white/5 leading-tight font-mono">
+            <span className="text-gray-100 font-bold block uppercase text-[9px] tracking-widest flex items-center gap-1"><Terminal size={10} /> Пример кода (cURL)</span>
+            <pre className="bg-black p-4 rounded-xl text-[10px] text-green-500 overflow-x-auto border border-white/5 leading-snug font-mono shadow-2xl">
 {`curl -X POST "${window.location.origin}/api/chat" \\
 -H "Content-Type: application/json" \\
 -d '{
-  "apiKey": "ВАШ_КЛЮЧ",
+  "apiKey": "ВАШ_API_КЛЮЧ",
   "prompt": "Привет!",
   "messages": []
 }'`}
@@ -282,18 +283,22 @@ const ApiView = ({ tgId }) => {
         </div>
       </div>
 
-      <button onClick={createKey} className="w-full glass-card border-dashed border-accent/40 p-5 flex items-center justify-center gap-3 text-accent font-black text-[10px] uppercase tracking-widest active:scale-95 transition-all shadow-lg shadow-accent/5">
-        <Plus size={18} /> Создать новый ключ
+      <button onClick={createKey} className="w-full glass-card border-dashed border-accent/40 p-5 flex items-center justify-center gap-3 text-accent font-black text-[10px] uppercase tracking-widest active:scale-95 transition-all shadow-lg">
+        <Plus size={18} /> Сгенерировать новый ключ
       </button>
 
       <div className="space-y-3">
         <h3 className="text-[10px] font-black text-gray-600 uppercase tracking-[0.2em] px-1">Ваши активные ключи</h3>
         {keys.map(k => (
-          <div key={k.id} className="glass-card p-4 border-white/5 flex flex-col space-y-2">
+          <div key={k.id} className="glass-card p-4 border-white/5 flex flex-col space-y-2 hover:border-accent/20 transition-colors">
             <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{k.key_name}</span>
             <div className="flex items-center justify-between bg-black/40 rounded-xl px-3 py-2.5 border border-white/5 font-mono text-[10px] text-accent shadow-inner overflow-hidden">
-              <span className="truncate mr-4 uppercase">{k.key_value}</span>
-              <Copy size={14} className="text-gray-500 hover:text-white cursor-pointer flex-shrink-0" onClick={() => { navigator.clipboard.writeText(k.key_value); alert("Ключ скопирован!"); }} />
+              <span className="truncate mr-4 uppercase tracking-tighter">{k.key_value}</span>
+              <Copy size={14} className="text-gray-500 hover:text-white cursor-pointer flex-shrink-0" onClick={() => { 
+                navigator.clipboard.writeText(k.key_value); 
+                window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
+                alert("Ключ скопирован!"); 
+              }} />
             </div>
           </div>
         ))}
@@ -326,7 +331,7 @@ export default function App() {
   }, []);
 
   return (
-    <div className="flex flex-col h-screen max-w-md mx-auto bg-[#0a0a0a] text-white overflow-hidden font-sans select-none">
+    <div className="flex flex-col h-screen max-w-md mx-auto bg-[#0a0a0a] text-white overflow-hidden font-sans select-none tracking-tight">
       <main className="flex-1 overflow-y-auto">
         <AnimatePresence mode="wait">
           {activeTab === 'home' && <ProfileView key="p" userData={userData} />}
@@ -343,7 +348,7 @@ export default function App() {
         ].map(t => (
           <button key={t.id} onClick={() => { setActiveTab(t.id); window.Telegram.WebApp.HapticFeedback.impactOccurred('light'); }} className={`flex-1 flex flex-col items-center py-2.5 rounded-2xl transition-all duration-300 ${activeTab === t.id ? 'bg-accent text-white shadow-lg shadow-accent/40 scale-105' : 'text-gray-500'}`}>
             <t.icon size={18} />
-            <span className="text-[9px] mt-1 font-black uppercase tracking-tight">{t.label}</span>
+            <span className="text-[9px] mt-1 font-black uppercase tracking-widest">{t.label}</span>
           </button>
         ))}
       </nav>
