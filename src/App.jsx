@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { User, LayoutGrid, Key, Sparkles, Copy, Plus, Trash2, ShieldCheck, Send, Loader2, Menu, X, MessageSquare } from 'lucide-react';
+import { User, Key, Sparkles, Copy, Plus, Trash2, ShieldCheck, Send, Loader2, Menu, X, MessageSquare, Code, BookOpen, Terminal } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { supabase } from './supabaseClient';
 
 const AI_MODELS = [
-  { id: 'nvidia/nemotron-3-nano-30b-a3b:free', name: 'Nemotron Nano', provider: 'NVIDIA', price: '0.2 ⭐', icon: '🤖' },
+  { id: 'nvidia/nemotron-3-nano-30b-a3b:free', name: 'Nemotron 3 Nano 30B', provider: 'NVIDIA', price: '0.2 ⭐', icon: '🤖' },
 ];
 
 const RECHARGE_PACKS = [
@@ -19,27 +21,16 @@ const ProfileView = ({ userData }) => {
   const handlePayment = async (amount) => {
     if (!userData || isPaying) return;
     setIsPaying(true);
-
     try {
       const response = await fetch('/api/create-invoice', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          amount: amount,
-          userId: userData.telegram_id
-        })
+        body: JSON.stringify({ amount, userId: userData.telegram_id })
       });
-
       const data = await response.json();
-
       if (data.link) {
-        // Открываем нативное окно оплаты Telegram
         window.Telegram.WebApp.openInvoice(data.link, (status) => {
-          if (status === 'paid') {
-            alert('Оплата успешно завершена! Звезды будут зачислены в течение минуты.');
-          } else if (status === 'failed') {
-            alert('Ошибка при проведении платежа.');
-          }
+          if (status === 'paid') alert('Звезды зачислены!');
           setIsPaying(false);
         });
       } else {
@@ -61,27 +52,26 @@ const ProfileView = ({ userData }) => {
           </div>
           <div>
             <h2 className="text-xl font-bold text-white tracking-tight">@{userData?.username || 'user'}</h2>
-            <div className="flex items-center gap-1.5 text-yellow-400 mt-1">
+            <div className="flex items-center gap-1.5 text-yellow-400 mt-1 font-bold">
               <Sparkles size={16} fill="currentColor" />
-              <span className="text-sm font-black">{userData?.stars_balance?.toFixed(1) ?? 0} Звезд</span>
+              <span>{userData?.stars_balance?.toFixed(1) ?? 0} Звезд</span>
             </div>
           </div>
         </div>
       </div>
 
       <div className="space-y-4">
-        <h3 className="text-[11px] font-black text-gray-500 uppercase tracking-widest px-1 font-mono">Пополнение баланса (Telegram Stars)</h3>
+        <h3 className="text-[11px] font-black text-gray-500 uppercase tracking-widest px-1 font-mono">Пополнение баланса</h3>
         <div className="grid grid-cols-2 gap-3">
           {RECHARGE_PACKS.map(pack => (
             <button 
               key={pack.amt} 
               onClick={() => handlePayment(pack.amt)}
-              disabled={isPaying}
-              className="glass-card p-4 flex flex-col items-center justify-center gap-2 border-white/5 active:scale-95 transition-all hover:border-accent/30 disabled:opacity-50"
+              className="glass-card p-4 flex flex-col items-center justify-center gap-2 border-white/5 active:scale-95 transition-all hover:border-accent/30"
             >
               <Sparkles size={20} className="text-yellow-500" fill="currentColor" />
               <span className="font-bold text-white text-sm">{pack.amt} Звезд</span>
-              <span className="text-[9px] text-accent font-bold uppercase">{isPaying ? '...' : 'Купить'}</span>
+              <span className="text-[9px] text-accent font-black uppercase">Купить</span>
             </button>
           ))}
         </div>
@@ -111,10 +101,7 @@ const ChatView = ({ userData, onUpdateBalance }) => {
   const startNewChat = async () => {
     if (chats.length >= 10) return alert("Лимит 10 чатов. Удалите старые.");
     const { data } = await supabase.from('chats').insert([{ user_id: userData.telegram_id, title: `Чат #${chats.length + 1}` }]).select().single();
-    if (data) {
-      setChats([data, ...chats]);
-      selectChat(data);
-    }
+    if (data) { setChats([data, ...chats]); selectChat(data); }
   };
 
   const selectChat = async (chat) => {
@@ -139,7 +126,6 @@ const ChatView = ({ userData, onUpdateBalance }) => {
 
     try {
       const { data: keys } = await supabase.from('api_keys').select('key_value').eq('user_id', userData.telegram_id).limit(1);
-      
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -149,7 +135,6 @@ const ChatView = ({ userData, onUpdateBalance }) => {
           model: AI_MODELS[0].id
         })
       });
-
       const data = await res.json();
       if (data.reply) {
         const assistantMsg = { role: 'assistant', content: data.reply };
@@ -159,43 +144,58 @@ const ChatView = ({ userData, onUpdateBalance }) => {
           { chat_id: currentChat.id, role: 'assistant', content: assistantMsg.content }
         ]);
         onUpdateBalance();
-      } else {
-        alert(data.error || "Ошибка запроса");
-      }
+      } else alert(data.error);
     } catch (e) { alert(e.message); }
     setLoading(false);
   };
 
   return (
-    <div className="flex flex-col h-full font-sans relative">
-      <header className="p-4 flex justify-between items-center border-b border-white/5 bg-[#0a0a0a]/50 backdrop-blur-md">
-        <h2 className="text-xl font-black uppercase tracking-tighter">Чат</h2>
+    <div className="flex flex-col h-full relative font-sans">
+      <header className="p-4 flex justify-between items-center border-b border-white/5 bg-[#0a0a0a]">
+        <h2 className="text-xl font-black uppercase tracking-tighter">Чат-сессия</h2>
         <button onClick={() => setIsHistoryOpen(true)} className="p-2 glass-card text-accent"><Menu size={20} /></button>
       </header>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-32">
         {!currentChat ? (
-          <div className="h-full flex flex-col items-center justify-center text-center space-y-4 opacity-50 font-sans">
-            <MessageSquare size={48} /><p className="text-sm">Выберите чат или создайте новый</p>
+          <div className="h-full flex flex-col items-center justify-center text-center space-y-4 opacity-50">
+            <MessageSquare size={48} /><p className="text-sm">Выберите или создайте новый диалог</p>
             <button onClick={startNewChat} className="bg-accent px-8 py-3 rounded-xl text-white font-bold text-xs uppercase tracking-widest">Новый чат</button>
           </div>
         ) : (
           messages.map((m, i) => (
             <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-              <div className={`max-w-[85%] p-3 rounded-2xl text-sm ${m.role === 'user' ? 'bg-accent text-white rounded-tr-none' : 'glass-card border-white/10 rounded-tl-none'}`}>
-                {m.content}
+              <div className={`max-w-[90%] p-4 rounded-2xl text-sm leading-relaxed ${m.role === 'user' ? 'bg-accent text-white rounded-tr-none' : 'glass-card border-white/10 rounded-tl-none text-gray-100'}`}>
+                <ReactMarkdown remarkPlugins={[remarkGfm]} components={{
+                  code({node, inline, className, children, ...props}) {
+                    return !inline ? (
+                      <div className="relative my-2">
+                        <pre className="bg-black/50 p-3 rounded-lg overflow-x-auto text-[12px] font-mono border border-white/5">
+                          {children}
+                        </pre>
+                        <button onClick={() => navigator.clipboard.writeText(children)} className="absolute top-2 right-2 p-1 bg-white/5 rounded hover:bg-white/10 transition-colors">
+                           <Copy size={12} />
+                        </button>
+                      </div>
+                    ) : (
+                      <code className="bg-white/10 px-1 rounded font-mono text-accent" {...props}>{children}</code>
+                    )
+                  }
+                }}>
+                  {m.content}
+                </ReactMarkdown>
               </div>
             </div>
           ))
         )}
-        {loading && <div className="text-[10px] text-accent animate-pulse font-bold uppercase font-mono tracking-widest">Обработка...</div>}
+        {loading && <div className="text-[10px] text-accent animate-pulse font-bold uppercase tracking-widest">Печатает...</div>}
         <div ref={scrollRef} />
       </div>
 
       {currentChat && (
-        <div className="fixed bottom-24 left-0 w-full p-4 bg-[#0a0a0a]/80 backdrop-blur-md">
+        <div className="fixed bottom-24 left-0 w-full p-4 bg-[#0a0a0a]/90 backdrop-blur-md">
           <div className="relative max-w-md mx-auto flex gap-2">
-            <input value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && sendMessage()} placeholder="Задайте вопрос..." className="flex-1 bg-white/5 border border-white/10 rounded-2xl py-4 px-5 focus:outline-none focus:border-accent/50 text-sm" />
+            <input value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && sendMessage()} placeholder="Напишите сообщение..." className="flex-1 bg-white/5 border border-white/10 rounded-2xl py-4 px-5 focus:outline-none focus:border-accent/50 text-sm" />
             <button onClick={sendMessage} className="p-4 bg-accent rounded-2xl text-white active:scale-90 transition-all"><Send size={18} /></button>
           </div>
         </div>
@@ -205,14 +205,14 @@ const ChatView = ({ userData, onUpdateBalance }) => {
         {isHistoryOpen && (
           <>
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsHistoryOpen(false)} className="fixed inset-0 bg-black/80 z-[60]" />
-            <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} className="fixed top-0 right-0 h-full w-4/5 bg-[#0f0f0f] z-[70] p-6 shadow-2xl border-l border-white/5">
+            <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} className="fixed top-0 right-0 h-full w-4/5 bg-[#0a0a0a] z-[70] p-6 shadow-2xl border-l border-white/5">
               <div className="flex justify-between items-center mb-8"><h3 className="font-black uppercase tracking-widest text-xs">История</h3><X onClick={() => setIsHistoryOpen(false)} /></div>
-              <button onClick={startNewChat} className="w-full py-4 glass-card border-dashed border-accent/40 text-accent font-black text-[10px] uppercase mb-6 flex items-center justify-center gap-2 tracking-widest"><Plus size={16} /> Создать чат</button>
-              <div className="space-y-3 overflow-y-auto max-h-[75vh]">
+              <button onClick={startNewChat} className="w-full py-4 glass-card border-dashed border-accent/40 text-accent font-black text-[10px] uppercase mb-6 flex items-center justify-center gap-2 tracking-widest"><Plus size={16} /> Новый чат</button>
+              <div className="space-y-3 overflow-y-auto max-h-[75vh] no-scrollbar">
                 {chats.map(c => (
-                  <div key={c.id} className={`flex items-center gap-2 p-3 rounded-xl ${currentChat?.id === c.id ? 'bg-accent/20 border border-accent/50' : 'bg-white/5 border border-transparent'}`}>
+                  <div key={c.id} className={`flex items-center gap-2 p-3 rounded-xl ${currentChat?.id === c.id ? 'bg-accent/20 border border-accent/50 text-white' : 'bg-white/5 border border-transparent text-gray-400'}`}>
                     <div onClick={() => selectChat(c)} className="flex-1 text-[11px] font-bold truncate cursor-pointer uppercase tracking-tight">{c.title}</div>
-                    <Trash2 onClick={() => deleteChat(c.id)} size={14} className="text-gray-600 hover:text-red-500 transition-colors" />
+                    <Trash2 onClick={() => deleteChat(c.id)} size={14} className="hover:text-red-500 transition-colors" />
                   </div>
                 ))}
               </div>
@@ -227,6 +227,7 @@ const ChatView = ({ userData, onUpdateBalance }) => {
 // --- Вкладка API ---
 const ApiView = ({ tgId }) => {
   const [keys, setKeys] = useState([]);
+  
   useEffect(() => { if (tgId) fetchKeys(); }, [tgId]);
   const fetchKeys = async () => {
     const { data } = await supabase.from('api_keys').select('*').eq('user_id', tgId).order('created_at', { ascending: false });
@@ -239,15 +240,47 @@ const ApiView = ({ tgId }) => {
   };
 
   return (
-    <div className="p-6 space-y-6 pb-24 font-sans">
+    <div className="p-6 space-y-6 pb-24 font-sans overflow-y-auto h-full no-scrollbar">
       <div className="flex justify-between items-center"><h2 className="text-2xl font-black tracking-tighter uppercase">API Доступ</h2><ShieldCheck className="text-green-500" /></div>
+      
+      {/* Секция документации */}
+      <div className="glass-card p-5 border-white/5 space-y-4">
+        <div className="flex items-center gap-2 text-accent font-bold text-xs uppercase tracking-widest border-b border-white/5 pb-3">
+          <BookOpen size={14} /> Инструкция по интеграции
+        </div>
+        <div className="space-y-3 text-[11px] text-gray-400 leading-relaxed">
+          <p>Наш агрегатор позволяет использовать мощные ИИ модели в ваших проектах через простой HTTP запрос.</p>
+          <div className="space-y-1">
+            <span className="text-gray-200 font-bold block uppercase text-[9px]">1. Base URL</span>
+            <code className="block bg-black/40 p-2 rounded border border-white/5 text-accent truncate">https://{window.location.hostname}/api/chat</code>
+          </div>
+          <div className="space-y-1">
+            <span className="text-gray-200 font-bold block uppercase text-[9px]">2. Авторизация</span>
+            <p>Передавайте ваш секретный ключ в теле запроса как <code className="text-white">apiKey</code>.</p>
+          </div>
+          <div className="space-y-1 pt-2">
+            <span className="text-gray-200 font-bold block uppercase text-[9px]">3. Пример (cURL)</span>
+            <pre className="bg-black p-3 rounded-lg text-[10px] text-green-500 overflow-x-auto border border-white/5">
+{`curl -X POST "${window.location.origin}/api/chat" \\
+-H "Content-Type: application/json" \\
+-d '{
+  "apiKey": "ВАШ_КЛЮЧ",
+  "prompt": "Привет!",
+  "messages": []
+}'`}
+            </pre>
+          </div>
+        </div>
+      </div>
+
       <button onClick={createKey} className="w-full glass-card border-dashed border-accent/40 p-5 flex items-center justify-center gap-3 text-accent font-black text-[10px] uppercase tracking-widest active:scale-95 transition-all">
-        <Plus size={18} /> Создать API ключ
+        <Plus size={18} /> Создать секретный ключ
       </button>
+
       <div className="space-y-3">
         {keys.map(k => (
           <div key={k.id} className="glass-card p-4 border-white/5 flex flex-col space-y-2">
-            <span className="text-[10px] font-bold text-gray-500 uppercase">{k.key_name}</span>
+            <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{k.key_name}</span>
             <div className="flex items-center justify-between bg-black/40 rounded-xl px-3 py-2.5 border border-white/5 font-mono text-[10px] text-accent">
               <span className="truncate mr-4 uppercase">{k.key_value}</span>
               <Copy size={14} className="text-gray-500 hover:text-white cursor-pointer" onClick={() => { navigator.clipboard.writeText(k.key_value); alert("Скопировано"); }} />
@@ -269,23 +302,21 @@ export default function App() {
     if (!data) {
       const { data: newUser } = await supabase.from('profiles').insert([{ telegram_id: tgUser.id, username: tgUser.username || 'user', stars_balance: 5.0 }]).select().single();
       setUserData(newUser);
-    } else {
-      setUserData(data);
-    }
+    } else setUserData(data);
   };
 
   useEffect(() => {
     const tg = window.Telegram?.WebApp;
     if (tg) {
-      tg.ready();
-      tg.expand();
-      const user = tg.initDataUnsafe?.user || { id: 12345, username: 'tester' };
+      tg.ready(); tg.expand();
+      tg.headerColor = '#0a0a0a'; tg.backgroundColor = '#0a0a0a';
+      const user = tg.initDataUnsafe?.user || { id: 12345, username: 'тестер' };
       syncUser(user);
     }
   }, []);
 
   return (
-    <div className="flex flex-col h-screen max-w-md mx-auto bg-[#0a0a0a] text-white overflow-hidden font-sans">
+    <div className="flex flex-col h-screen max-w-md mx-auto bg-[#0a0a0a] text-white overflow-hidden font-sans select-none">
       <main className="flex-1 overflow-y-auto">
         <AnimatePresence mode="wait">
           {activeTab === 'home' && <ProfileView key="p" userData={userData} />}
@@ -294,13 +325,13 @@ export default function App() {
         </AnimatePresence>
       </main>
 
-      <nav className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[92%] glass-card p-2 flex justify-between items-center z-50 border-white/10 shadow-2xl backdrop-blur-xl bg-black/60">
+      <nav className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[92%] glass-card p-2 flex justify-between items-center z-50 border-white/10 shadow-2xl backdrop-blur-xl bg-black/80">
         {[
           { id: 'home', icon: User, label: 'Профиль' },
           { id: 'chat', icon: MessageSquare, label: 'Чат' },
           { id: 'api', icon: Key, label: 'API' }
         ].map(t => (
-          <button key={t.id} onClick={() => { setActiveTab(t.id); window.Telegram.WebApp.HapticFeedback.impactOccurred('light'); }} className={`flex-1 flex flex-col items-center py-2.5 rounded-2xl transition-all duration-300 ${activeTab === t.id ? 'bg-accent text-white shadow-lg shadow-accent/40' : 'text-gray-500'}`}>
+          <button key={t.id} onClick={() => { setActiveTab(t.id); window.Telegram.WebApp.HapticFeedback.impactOccurred('light'); }} className={`flex-1 flex flex-col items-center py-2.5 rounded-2xl transition-all duration-300 ${activeTab === t.id ? 'bg-accent text-white shadow-lg shadow-accent/40 scale-105' : 'text-gray-500'}`}>
             <t.icon size={18} />
             <span className="text-[9px] mt-1 font-black uppercase tracking-tight">{t.label}</span>
           </button>
