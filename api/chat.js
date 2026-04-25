@@ -1,4 +1,3 @@
-
 import { createClient } from '@supabase/supabase-js'
 
 const supabase = createClient(
@@ -6,28 +5,27 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-// --- БЕЛЫЙ СПИСОК РАЗРЕШЕННЫХ МОДЕЛЕЙ ---
-const ALLOWED_MODELS = [
-  "nvidia/nemotron-3-nano-30b-a3b:free",
-  "alltokens/auto" // Можно оставить эту, если хочешь доверять авто-выбору AllTokens
-];
+// Конфигурация цен для моделей
+const MODEL_CONFIG = {
+  "nvidia/nemotron-3-nano-30b-a3b:free": 0.2,
+  "minimax/minimax-m2.5:free": 0.8
+};
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Используйте POST запрос' });
 
   const { apiKey, messages, model } = req.body;
-  const COST = 0.2;
 
-  // 1. ПРОВЕРКА МОДЕЛИ НА ВШИВОСТЬ
-  // Если модель не прислана или её нет в нашем белом списке - блокируем запрос
-  if (!model || !ALLOWED_MODELS.includes(model)) {
-    return res.status(400).json({ 
-      error: `Модель '${model}' не поддерживается вашим тарифом. Доступные модели: ${ALLOWED_MODELS.join(', ')}` 
-    });
+  // Определение модели и её стоимости
+  const selectedModel = model || "nvidia/nemotron-3-nano-30b-a3b:free";
+  const cost = MODEL_CONFIG[selectedModel];
+
+  if (cost === undefined) {
+    return res.status(400).json({ error: `Модель '${selectedModel}' не поддерживается агрегатором.` });
   }
 
   try {
-    // 2. Валидация ключа агрегатора
+    // 1. Проверка API ключа агрегатора
     const { data: keyData, error: keyError } = await supabase
       .from('api_keys')
       .select('user_id')
@@ -35,21 +33,31 @@ export default async function handler(req, res) {
       .maybeSingle();
 
     if (keyError || !keyData) {
-      return res.status(401).json({ error: 'Ваш API ключ недействителен' });
+      return res.status(401).json({ error: 'Ваш API ключ недействителен или не найден' });
     }
 
-    // 3. Проверка баланса
+    // 2. Проверка профиля пользователя (баланс и статус бана)
     const { data: user, error: userError } = await supabase
       .from('profiles')
-      .select('stars_balance')
+      .select('stars_balance, is_banned')
       .eq('telegram_id', keyData.user_id)
       .single();
 
-    if (userError || !user || user.stars_balance < COST) {
-      return res.status(402).json({ error: 'Недостаточно звезд на балансе' });
+    if (userError || !user) {
+      return res.status(404).json({ error: 'Пользователь не найден в системе' });
     }
 
-    // 4. Запрос к AllTokens (только если модель прошла проверку выше)
+    // Проверка на БАН
+    if (user.is_banned) {
+      return res.status(403).json({ error: 'Ваш аккаунт заблокирован администратором' });
+    }
+
+    // Проверка баланса
+    if (user.stars_balance < cost) {
+      return res.status(402).json({ error: `Недостаточно звезд. Требуется: ${cost} ⭐` });
+    }
+
+    // 3. Запрос к провайдеру AllTokens
     const aiResponse = await fetch("https://api.alltokens.ru/api/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -57,7 +65,7 @@ export default async function handler(req, res) {
         "Authorization": `Bearer ${process.env.AI_PROVIDER_KEY}`
       },
       body: JSON.stringify({
-        model: model, // Здесь будет только разрешенная модель
+        model: selectedModel,
         messages: messages,
         temperature: 0.7
       })
@@ -66,15 +74,27 @@ export default async function handler(req, res) {
     const aiData = await aiResponse.json();
 
     if (!aiResponse.ok) {
-      return res.status(aiResponse.status).json({ error: aiData.error?.message || 'Ошибка нейросети' });
+      return res.status(aiResponse.status).json({ 
+        error: aiData.error?.message || 'Ошибка на стороне нейросети' 
+      });
     }
 
-    // 5. Списание средств
-    await supabase.from('profiles').update({ stars_balance: user.stars_balance - COST }).eq('telegram_id', keyData.user_id);
+    // 4. Списание баланса согласно стоимости модели
+    const { error: updateError } = await supabase
+      .from('profiles')
+      .update({ stars_balance: user.stars_balance - cost })
+      .eq('telegram_id', keyData.user_id);
 
-    res.status(200).json({ reply: aiData.choices[0].message.content });
+    if (updateError) {
+      return res.status(500).json({ error: 'Ошибка при обновлении баланса' });
+    }
+
+    // 5. Возврат ответа
+    res.status(200).json({ 
+      reply: aiData.choices[0].message.content 
+    });
 
   } catch (error) {
-    res.status(500).json({ error: 'Системная ошибка: ' + error.message });
+    res.status(500).json({ error: 'Критическая ошибка сервера: ' + error.message });
   }
 }
