@@ -1,3 +1,4 @@
+
 import { createClient } from '@supabase/supabase-js'
 
 const supabase = createClient(
@@ -57,6 +58,12 @@ export default async function handler(req, res) {
       return res.status(402).json({ error: `Недостаточно звезд. Требуется: ${cost} ⭐` });
     }
 
+    // Внедряем системную инструкцию, чтобы ИИ знал свою модель
+    const systemPrompt = {
+      role: "system",
+      content: `Ты — полезный ассистент. Твоя текущая модель: ${selectedModel}. Отвечай всегда на русском языке.`
+    };
+
     // 3. Запрос к провайдеру AllTokens
     const aiResponse = await fetch("https://api.alltokens.ru/api/v1/chat/completions", {
       method: "POST",
@@ -66,7 +73,7 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         model: selectedModel,
-        messages: messages,
+        messages: [systemPrompt, ...messages], // Объединяем системную роль и историю
         temperature: 0.7
       })
     });
