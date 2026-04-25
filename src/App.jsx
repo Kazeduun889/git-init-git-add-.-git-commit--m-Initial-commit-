@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { User, Key, Sparkles, Copy, Plus, Trash2, ShieldCheck, Send, Loader2, Menu, X, MessageSquare, BookOpen, Terminal, Cpu, BarChart3, Search, Wrench, Activity, Clock } from 'lucide-react';
+import { User, Key, Sparkles, Copy, Plus, Trash2, ShieldCheck, Send, Loader2, Menu, X, MessageSquare, BookOpen, Terminal, Cpu, BarChart3, Search, Wrench, Activity, Clock, Globe, Info, Code as CodeIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -55,7 +55,7 @@ const AdminView = ({ onBack }) => {
       <div className="flex items-center justify-between sticky top-0 bg-[#0a0a0a] py-2 z-10">
         <div className="flex items-center gap-2">
           <Activity size={20} className="text-red-500" />
-          <h2 className="text-xl font-black uppercase tracking-tighter">Управление</h2>
+          <h2 className="text-xl font-black uppercase tracking-tighter text-white">Управление</h2>
         </div>
         <button onClick={onBack} className="p-2 glass-card text-gray-500"><X size={20}/></button>
       </div>
@@ -63,19 +63,19 @@ const AdminView = ({ onBack }) => {
       <div className="grid grid-cols-2 gap-3">
         <div className="glass-card p-4 border-red-500/10 bg-red-500/5">
           <span className="text-[9px] uppercase font-black text-gray-500 block mb-1">Всего юзеров</span>
-          <div className="text-2xl font-black">{stats.users}</div>
-          <div className="text-[9px] text-green-500 mt-1 flex items-center gap-1"><Plus size={10}/>{stats.newToday} сегодня</div>
+          <div className="text-2xl font-black text-white">{stats.users}</div>
+          <div className="text-[9px] text-green-500 mt-1 flex items-center gap-1 font-bold">+{stats.newToday} сегодня</div>
         </div>
         <div className="glass-card p-4 border-accent/10 bg-accent/5">
           <span className="text-[9px] uppercase font-black text-gray-500 block mb-1">Звезд в обороте</span>
-          <div className="text-2xl font-black">{stats.stars.toFixed(0)}</div>
+          <div className="text-2xl font-black text-white">{stats.stars.toFixed(0)}</div>
           <div className="text-[9px] text-accent mt-1 flex items-center gap-1 font-bold">AVG: {(stats.stars / (stats.users || 1)).toFixed(1)}</div>
         </div>
       </div>
 
       <div className="relative">
         <Search className="absolute left-3 top-3.5 text-gray-600" size={16} />
-        <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Поиск по ID или нику..." className="w-full bg-white/5 border border-white/10 rounded-2xl py-3.5 px-10 text-sm focus:outline-none focus:border-red-500/30" />
+        <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Поиск по ID или нику..." className="w-full bg-white/5 border border-white/10 rounded-2xl py-3.5 px-10 text-sm focus:outline-none focus:border-red-500/30 text-white" />
       </div>
 
       <div className="space-y-3">
@@ -91,9 +91,9 @@ const AdminView = ({ onBack }) => {
               </div>
             </div>
             <div className="flex gap-2">
-              <button onClick={() => updateBalance(u.telegram_id, u.stars_balance, 10)} className="flex-1 bg-white/5 hover:bg-green-500/20 hover:text-green-500 py-2.5 rounded-xl text-[9px] font-black uppercase transition-all border border-white/5">+10</button>
-              <button onClick={() => updateBalance(u.telegram_id, u.stars_balance, 100)} className="flex-1 bg-white/5 hover:bg-green-500/20 hover:text-green-500 py-2.5 rounded-xl text-[9px] font-black uppercase transition-all border border-white/5">+100</button>
-              <button onClick={() => updateBalance(u.telegram_id, u.stars_balance, -10)} className="flex-1 bg-white/5 hover:bg-red-500/20 hover:text-red-500 py-2.5 rounded-xl text-[9px] font-black uppercase transition-all border border-white/5">-10</button>
+              <button onClick={() => updateBalance(u.telegram_id, u.stars_balance, 10)} className="flex-1 bg-white/5 hover:bg-green-500/20 hover:text-green-500 py-2.5 rounded-xl text-[9px] font-black uppercase transition-all border border-white/5 text-white">+10</button>
+              <button onClick={() => updateBalance(u.telegram_id, u.stars_balance, 100)} className="flex-1 bg-white/5 hover:bg-green-500/20 hover:text-green-500 py-2.5 rounded-xl text-[9px] font-black uppercase transition-all border border-white/5 text-white">+100</button>
+              <button onClick={() => updateBalance(u.telegram_id, u.stars_balance, -10)} className="flex-1 bg-white/5 hover:bg-red-500/20 hover:text-red-500 py-2.5 rounded-xl text-[9px] font-black uppercase transition-all border border-white/5 text-white">-10</button>
             </div>
           </div>
         ))}
@@ -132,7 +132,7 @@ const ProfileView = ({ userData, onOpenAdmin }) => {
           <div className="w-20 h-20 bg-gradient-to-tr from-accent to-purple-600 rounded-[28px] flex items-center justify-center shadow-2xl shadow-accent/20 mb-4 border border-white/10">
             <User size={40} className="text-white" />
           </div>
-          <h2 className="text-xl font-black text-white tracking-tight italic">@{userData?.username || 'user'}</h2>
+          <h2 className="text-xl font-black text-white tracking-tight">@{userData?.username || 'user'}</h2>
           <div className="flex items-center gap-1.5 text-yellow-400 mt-2 font-black bg-black/40 px-5 py-2 rounded-full border border-white/5 shadow-inner">
             <Sparkles size={16} fill="currentColor" />
             <span className="text-[15px]">{userData?.stars_balance?.toFixed(1) ?? 0} Звезд</span>
@@ -149,7 +149,7 @@ const ProfileView = ({ userData, onOpenAdmin }) => {
         <h3 className="text-[11px] font-black text-gray-500 uppercase tracking-widest px-1 font-mono">Выбор пакета звезд</h3>
         <div className="grid grid-cols-2 gap-3">
           {RECHARGE_PACKS.map(pack => (
-            <button key={pack.amt} onClick={() => handlePayment(pack.amt)} className="glass-card p-4 flex flex-col items-center justify-center gap-2 border-white/5 active:scale-95 transition-all hover:border-accent/40 hover:shadow-[0_0_20px_rgba(139,92,246,0.15)] bg-white/[0.01]">
+            <button key={pack.amt} onClick={() => handlePayment(pack.amt)} className="glass-card p-4 flex flex-col items-center justify-center gap-2 border-white/5 active:scale-95 transition-all hover:border-accent/40 hover:shadow-[0_0_20px_rgba(139,92,246,0.15)] bg-white/[0.01] text-white">
               <Sparkles size={20} className="text-yellow-500" fill="currentColor" />
               <span className="font-black text-white text-sm">{pack.amt} Звезд</span>
               <div className="h-[1px] w-8 bg-white/10 my-1" />
@@ -235,7 +235,7 @@ const ChatView = ({ userData, onUpdateBalance }) => {
     <div className="flex flex-col h-full relative font-sans overflow-hidden">
       <header className="p-4 border-b border-white/5 bg-[#0a0a0a] sticky top-0 z-40">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-black uppercase tracking-tighter">Чат</h2>
+          <h2 className="text-xl font-black uppercase tracking-tighter text-white">Чат</h2>
           <button onClick={() => setIsHistoryOpen(true)} className="p-2 glass-card text-accent active:scale-90 transition-all border-accent/20"><Menu size={20} /></button>
         </div>
         <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
@@ -253,7 +253,7 @@ const ChatView = ({ userData, onUpdateBalance }) => {
         </div>
       </header>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-5 pb-56 scroll-smooth">
+      <div className="flex-1 overflow-y-auto p-4 space-y-5 pb-56 scroll-smooth text-white">
         {!currentChat ? (
           <div className="h-full flex flex-col items-center justify-center text-center space-y-4 opacity-40">
             <MessageSquare size={54} className="text-accent" /><p className="text-sm font-medium">Создайте новый диалог для начала работы</p>
@@ -308,7 +308,7 @@ const ChatView = ({ userData, onUpdateBalance }) => {
           <>
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsHistoryOpen(false)} className="fixed inset-0 bg-black/80 z-[60]" />
             <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} className="fixed top-0 right-0 h-full w-4/5 bg-[#0a0a0a] z-[70] p-6 shadow-2xl border-l border-white/5">
-              <div className="flex justify-between items-center mb-8"><h3 className="font-black uppercase tracking-widest text-[11px] text-gray-400">Архив переписки</h3><X onClick={() => setIsHistoryOpen(false)} className="text-gray-500" /></div>
+              <div className="flex justify-between items-center mb-8 text-white"><h3 className="font-black uppercase tracking-widest text-[11px] text-gray-400">Архив переписки</h3><X onClick={() => setIsHistoryOpen(false)} className="text-gray-500 cursor-pointer" /></div>
               <button onClick={startNewChat} className="w-full py-4 glass-card border-dashed border-accent/40 text-accent font-black text-[10px] uppercase mb-6 flex items-center justify-center gap-3 tracking-widest active:scale-95 transition-all"><Plus size={16} /> Создать диалог</button>
               <div className="space-y-3 overflow-y-auto max-h-[75vh] no-scrollbar">
                 {chats.map(c => (
@@ -329,6 +329,7 @@ const ChatView = ({ userData, onUpdateBalance }) => {
 // --- Вкладка API ---
 const ApiView = ({ tgId }) => {
   const [keys, setKeys] = useState([]);
+  const [isDocsOpen, setIsDocsOpen] = useState(false);
   
   useEffect(() => { if (tgId) fetchKeys(); }, [tgId]);
   const fetchKeys = async () => {
@@ -342,57 +343,153 @@ const ApiView = ({ tgId }) => {
   };
 
   return (
-    <div className="p-6 space-y-6 pb-40 font-sans overflow-y-auto h-full no-scrollbar">
-      <div className="flex justify-between items-center"><h2 className="text-2xl font-black tracking-tighter uppercase">Документация</h2><ShieldCheck className="text-green-500" /></div>
+    <div className="p-6 space-y-6 pb-40 font-sans overflow-y-auto h-full no-scrollbar text-white">
+      <div className="flex justify-between items-center"><h2 className="text-2xl font-black tracking-tighter uppercase">API Раздел</h2><ShieldCheck className="text-green-500" /></div>
       
-      <div className="glass-card p-5 border-white/5 space-y-5">
-        <div className="flex items-center gap-2 text-accent font-black text-[10px] uppercase tracking-[0.2em] border-b border-white/5 pb-4">
-          <BookOpen size={14} /> Инструкция по внедрению
-        </div>
-        <div className="space-y-5 text-[11px] text-gray-400 leading-relaxed">
-          <div className="space-y-2">
-            <span className="text-gray-100 font-black block uppercase text-[9px] tracking-widest">1. Конечная точка (Base URL)</span>
-            <p>Отправляйте все POST-запросы вашего приложения на этот защищенный адрес API агрегатора:</p>
-            <div className="flex items-center gap-2 bg-black/50 p-3 rounded-xl border border-white/5">
-              <code className="flex-1 text-accent text-[9px] font-bold overflow-hidden truncate">https://{window.location.hostname}/api/chat</code>
-              <Copy size={12} className="cursor-pointer hover:text-white" onClick={() => { navigator.clipboard.writeText(`https://${window.location.hostname}/api/chat`); alert("URL скопирован!"); }} />
-            </div>
+      {/* Кнопка открытия инструкции */}
+      <button 
+        onClick={() => setIsDocsOpen(true)}
+        className="w-full glass-card p-5 flex items-center justify-between border-accent/20 bg-accent/5 active:scale-[0.98] transition-all group"
+      >
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-accent rounded-lg text-white">
+            <BookOpen size={18} />
           </div>
-          <div className="space-y-2">
-            <span className="text-gray-100 font-black block uppercase text-[9px] tracking-widest">2. Авторизация (API Key)</span>
-            <p>Выпустите уникальный токен доступа ниже. Передавайте его в JSON теле каждого запроса как обязательный параметр <span className="text-white font-bold">"apiKey"</span>. Никогда не передавайте ключ в публичном доступе.</p>
-          </div>
-          <div className="space-y-2 pt-2">
-            <span className="text-gray-100 font-black block uppercase text-[9px] tracking-widest flex items-center gap-1.5"><Terminal size={12} /> Образец запроса (cURL)</span>
-            <pre className="bg-black/80 p-4 rounded-xl text-[10px] text-green-500/90 overflow-x-auto border border-white/10 leading-relaxed font-mono shadow-inner">
-{`curl -X POST "${window.location.origin}/api/chat" \\
--H "Content-Type: application/json" \\
--d '{
-  "apiKey": "ВАШ_СЕКРЕТНЫЙ_КЛЮЧ",
-  "prompt": "Текст вашего вопроса",
-  "messages": []
-}'`}
-            </pre>
+          <div className="text-left">
+            <span className="block text-[11px] font-black uppercase text-white">Документация API</span>
+            <span className="text-[9px] text-gray-400 font-medium">Как подключить агрегатор к себе</span>
           </div>
         </div>
-      </div>
+        <Plus size={16} className="text-accent group-hover:rotate-45 transition-transform" />
+      </button>
 
       <button onClick={createKey} className="w-full glass-card border-dashed border-accent/40 p-5 flex items-center justify-center gap-3 text-accent font-black text-[10px] uppercase tracking-widest active:scale-95 transition-all shadow-lg hover:bg-accent/5">
-        <Plus size={18} /> Создать новый API Токен
+        <Plus size={18} /> Сгенерировать API Токен
       </button>
 
       <div className="space-y-3">
         <h3 className="text-[10px] font-black text-gray-600 uppercase tracking-[0.2em] px-1">Ваши активные токены</h3>
         {keys.map(k => (
           <div key={k.id} className="glass-card p-4 border-white/5 flex flex-col space-y-2 hover:border-accent/20 transition-all">
-            <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest tracking-tighter">{k.key_name}</span>
-            <div className="flex items-center justify-between bg-black/40 rounded-xl px-4 py-3 border border-white/5 font-mono text-[10px] text-accent shadow-inner">
+            <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">{k.key_name}</span>
+            <div className="flex items-center justify-between bg-black/40 rounded-xl px-4 py-3 border border-white/5 font-mono text-[10px] text-accent shadow-inner overflow-hidden">
               <span className="truncate mr-4 uppercase tracking-tighter">{k.key_value}</span>
-              <Copy size={14} className="text-gray-500 hover:text-white cursor-pointer flex-shrink-0" onClick={() => { navigator.clipboard.writeText(k.key_value); alert("Токен скопирован!"); }} />
+              <Copy size={14} className="text-gray-500 hover:text-white cursor-pointer flex-shrink-0" onClick={() => { 
+                navigator.clipboard.writeText(k.key_value); 
+                window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
+                alert("Токен скопирован!"); 
+              }} />
             </div>
           </div>
         ))}
       </div>
+
+      {/* Модальное окно документации */}
+      <AnimatePresence>
+        {isDocsOpen && (
+          <motion.div 
+            initial={{ opacity: 0, y: 100 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            exit={{ opacity: 0, y: 100 }}
+            className="fixed inset-0 z-[100] bg-[#0a0a0a] p-6 overflow-y-auto no-scrollbar"
+          >
+            <div className="flex justify-between items-center mb-8 sticky top-0 bg-[#0a0a0a] py-2">
+              <div className="flex items-center gap-2">
+                <Globe size={18} className="text-accent" />
+                <h3 className="font-black uppercase tracking-widest text-xs">Руководство по внедрению</h3>
+              </div>
+              <button onClick={() => setIsDocsOpen(false)} className="p-2 glass-card text-gray-500"><X size={20}/></button>
+            </div>
+
+            <div className="space-y-8 text-gray-300 pb-20">
+              <section className="space-y-3">
+                <div className="flex items-center gap-2 text-white">
+                  <div className="w-6 h-6 bg-accent/20 rounded flex items-center justify-center text-[10px] font-bold text-accent italic">01</div>
+                  <h4 className="text-[11px] font-black uppercase tracking-widest">Обзор архитектуры</h4>
+                </div>
+                <p className="text-[12px] leading-relaxed text-gray-400">
+                  Наш агрегатор предоставляет единый программный интерфейс (API) для доступа к передовым ИИ моделям. Вы можете интегрировать наши возможности в свои Telegram боты, сайты или мобильные приложения, используя ваш личный баланс звезд.
+                </p>
+              </section>
+
+              <section className="space-y-3">
+                <div className="flex items-center gap-2 text-white">
+                  <div className="w-6 h-6 bg-accent/20 rounded flex items-center justify-center text-[10px] font-bold text-accent italic">02</div>
+                  <h4 className="text-[11px] font-black uppercase tracking-widest">Конечная точка (Endpoint)</h4>
+                </div>
+                <p className="text-[12px] leading-relaxed text-gray-400">Все запросы должны отправляться методом <span className="text-accent font-bold">POST</span> на следующий адрес:</p>
+                <div className="flex items-center gap-2 bg-black/50 p-4 rounded-xl border border-white/5">
+                  <code className="flex-1 text-accent text-[10px] font-bold overflow-hidden truncate">https://{window.location.hostname}/api/chat</code>
+                  <Copy size={12} className="cursor-pointer hover:text-white" onClick={() => { navigator.clipboard.writeText(`https://${window.location.hostname}/api/chat`); alert("URL скопирован!"); }} />
+                </div>
+              </section>
+
+              <section className="space-y-3">
+                <div className="flex items-center gap-2 text-white">
+                  <div className="w-6 h-6 bg-accent/20 rounded flex items-center justify-center text-[10px] font-bold text-accent italic">03</div>
+                  <h4 className="text-[11px] font-black uppercase tracking-widest">Авторизация</h4>
+                </div>
+                <p className="text-[12px] leading-relaxed text-gray-400">
+                  Для доступа используйте параметр <span className="text-white font-bold">apiKey</span> в теле JSON-запроса. Сгенерируйте токен на главной странице раздела API. Никогда не разглашайте этот ключ.
+                </p>
+              </section>
+
+              <section className="space-y-3">
+                <div className="flex items-center gap-2 text-white">
+                  <div className="w-6 h-6 bg-accent/20 rounded flex items-center justify-center text-[10px] font-bold text-accent italic">04</div>
+                  <h4 className="text-[11px] font-black uppercase tracking-widest">Доступные модели</h4>
+                </div>
+                <div className="glass-card p-4 border-white/5 space-y-3 bg-white/[0.01]">
+                  <div className="flex justify-between items-center border-b border-white/5 pb-2">
+                    <span className="text-[10px] font-bold text-white uppercase">Имя для API</span>
+                    <span className="text-[10px] font-bold text-white uppercase">Цена</span>
+                  </div>
+                  {AI_MODELS.map(m => (
+                    <div key={m.id} className="flex justify-between items-center">
+                      <code className="text-accent text-[10px] font-bold">{m.id}</code>
+                      <span className="text-[10px] text-gray-400 font-black">{m.price} ⭐</span>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-[10px] italic text-gray-500">* Список моделей будет расширяться. Следите за обновлениями.</p>
+              </section>
+
+              <section className="space-y-3">
+                <div className="flex items-center gap-2 text-white">
+                  <div className="w-6 h-6 bg-accent/20 rounded flex items-center justify-center text-[10px] font-bold text-accent italic">05</div>
+                  <h4 className="text-[11px] font-black uppercase tracking-widest">Пример реализации (Python)</h4>
+                </div>
+                <pre className="bg-black/80 p-4 rounded-xl text-[10px] text-green-500/90 overflow-x-auto border border-white/10 leading-snug font-mono shadow-inner">
+{`import requests
+
+url = "https://${window.location.hostname}/api/chat"
+payload = {
+    "apiKey": "ВАШ_ТОКЕН",
+    "prompt": "Привет!",
+    "messages": [], # История переписки
+    "model": "nvidia/nemotron-3-nano-30b-a3b:free"
+}
+
+response = requests.post(url, json=payload)
+print(response.json()['reply'])`}
+                </pre>
+              </section>
+
+              <section className="space-y-3">
+                <div className="flex items-center gap-2 text-white">
+                  <div className="w-6 h-6 bg-accent/20 rounded flex items-center justify-center text-[10px] font-bold text-accent italic">06</div>
+                  <h4 className="text-[11px] font-black uppercase tracking-widest">Коды ответов</h4>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex gap-3 text-[11px]"><span className="text-green-500 font-bold w-8">200</span> <span className="text-gray-400">Успешный запрос</span></div>
+                  <div className="flex gap-3 text-[11px]"><span className="text-red-500 font-bold w-8">401</span> <span className="text-gray-400">Ошибка авторизации (неверный ключ)</span></div>
+                  <div className="flex gap-3 text-[11px]"><span className="text-yellow-500 font-bold w-8">402</span> <span className="text-gray-400">Недостаточно звезд на балансе</span></div>
+                </div>
+              </section>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
